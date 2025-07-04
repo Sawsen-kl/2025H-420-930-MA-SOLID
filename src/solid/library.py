@@ -1,43 +1,20 @@
 from abc import ABC, abstractmethod
 
+#nom et prenom :
+#Klai Sawsen
 
-class ILivre(ABC):
-    @abstractmethod
-    def genre(self) -> str:
-        """Retourne le genre du livre."""
-        pass
-
-    @abstractmethod
-    def valider_isbn(self):
-        """Valide l'ISBN du livre."""
-        pass
-
-    @abstractmethod
-    def afficher_format_long(self) -> str:
-        """Affiche le livre dans un format long."""
-        pass
-
-    @abstractmethod
-    def nb_pages(self) -> int:
-        """Retourne le nombre de pages du livre."""
-        pass
-
-    @abstractmethod
-    def narrateur(self) -> str:
-        """Retourne le nom du narrateur du livre (pour les livres Audio)."""
-        pass
-
-class Livre(ILivre):
+#La classe Ilivre oblige la classe livre d'herite des methodes inutile 
+#par exemple livre audio n'utilise pas nb_page()
+#livre papier n'utilise pas narrateur()
+#alors, je supprime la classe Ilivre, mettre classe livre comme classe mere
+#creer deux classe LivreAudio et LivrePapier qui herite du livre et ont de plus leurs propres methodes
+class Livre:
     def __init__(self, isbn: str, titre: str,
-                 auteur: str, genre: str,
-                 narrateur: str | None = None,
-                 nb_pages: int | None = None):
+                 auteur: str, genre: str):
         self.isbn = isbn
         self.titre = titre
         self.auteur = auteur
         self._genre = genre
-        self._narrateur = narrateur
-        self._nb_pages = nb_pages
 
     def genre(self) -> str:
         return self._genre
@@ -49,32 +26,37 @@ class Livre(ILivre):
         # autres règles de validation...
 
     def afficher_format_long(self) -> str:
-        """Format d'affichage personnalisé."""
-        if self.genre() == "BD":
-            return f"{self.titre} – {self.auteur} (BD, ISBN: {self.isbn})"
-        elif self.genre()  == "Roman":
-            return f"{self.titre} – {self.auteur} (Roman, ISBN: {self.isbn})"
-        elif self.genre()  == "Science-fiction":
-            return f"{self.titre} – {self.auteur} (Science-fiction, ISBN: {self.isbn})"
-        elif self.genre() == "Documentaire":
-            return f"{self.titre} – {self.auteur} (Documentaire, ISBN: {self.isbn})"
-        else:
-            return f"{self.titre} – {self.auteur} (ISBN: {self.isbn})"
+        # Affichage simple
+        return f"{self.titre} - {self.auteur} (ISBN: {self.isbn})"
+class LivrePapier(Livre):
+    def __init__(self, isbn: str, titre: str,
+                 auteur: str, genre: str,
+                 nb_pages: int):
+        super().__init__(isbn, titre, auteur, genre)
+        self._nb_pages = nb_pages
 
     def nb_pages(self) -> int:
-        if self._nb_pages is not None:
-            return self._nb_pages
-        else:
-            # Les livres audio n'ont pas de pages
-            return -1
+        return self._nb_pages
+
+    def afficher_format_long(self) -> str:
+        return f"{self.titre} - {self.auteur} ({self.genre()}, {self._nb_pages} pages, ISBN: {self.isbn})"
+
+
+class LivreAudio(Livre):
+    def __init__(self, isbn: str, titre: str,
+                 auteur: str, genre: str,
+                 narrateur: str):
+        super().__init__(isbn, titre, auteur, genre)
+        self._narrateur = narrateur
 
     def narrateur(self) -> str:
-        if self._narrateur is not None:
-            return self._narrateur
-        else:
-            # Les livres qui ne sont pas audio n'ont pas de narrateur
-            return ""
+        return self._narrateur
 
+    def afficher_format_long(self) -> str:
+        return f"{self.titre} - {self.auteur} ({self.genre()}, Narrateur: {self._narrateur}, ISBN: {self.isbn})"
+
+#1. SRP – Principe de Responsabilité Unique
+#open/close : plusieurs if et else
 class Bibliotheque:
     def __init__(self):
         self.inventaire: dict[str, int] = {}
@@ -109,6 +91,7 @@ class Bibliotheque:
             raise ValueError("Type de notification inconnu")
         return rapport
 
+#la fonction generer_rapport_disponibilite n'utilise aucun attribut de la classe Utilisateur
 class Utilisateur:
     def __init__(self, nom: str, mail: str):
         self.nom = nom
@@ -146,6 +129,7 @@ class NotificationServiceMail:
         # Logique d'envoi d'e-mail (mock)
         print(f"Envoi e‑mail à {to} : '{subject}' – {body}")
 
+#3. LSP – Principe de Substitution de Liskov
 class NotificationServiceSMS(NotificationServiceMail):
     def envoyer_sms(self, number: str, message: str):
         # Logique d'envoi de SMS (mock)
@@ -154,7 +138,9 @@ class NotificationServiceSMS(NotificationServiceMail):
     def envoyer_email(self, to: str, subject: str, body: str):
         raise NotImplementedError("Envoi d'e-mail non supporté par NotificationServiceSMS")
 
-class RapportService:
+
+#1. SRP – Principe de Responsabilité Uniqueclass RapportService:
+
     def generer_pdf(self, inventaire: dict[str, int]) -> str:
         # Génération de PDF, logique mélangée
         return f"PDF – {len(inventaire)} titres dans l'inventaire"
